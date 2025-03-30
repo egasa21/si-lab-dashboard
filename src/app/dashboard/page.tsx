@@ -12,7 +12,7 @@ export default function DashboardHome() {
       <div className="px-4 lg:px-6">
         <ChartAreaInteractive />
       </div>
-      <DataTable data={data} />
+      {/* <DataTable columns={practicumColumns} data={data} /> */}
     </div>
     </div>
   )
