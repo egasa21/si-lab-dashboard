@@ -1,6 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 
 export type Practicum = {
+  id?: string
   kode: string
   nama: string
   deskripsi: string

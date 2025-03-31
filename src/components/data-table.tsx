@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DataTableToolbar } from "./data-table-toolbar"
+import { useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTableToolbar } from "./data-table-toolbar";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -11,16 +11,20 @@ import {
   getFilteredRowModel,
   useReactTable,
   flexRender,
-} from "@tanstack/react-table"
-import { DataTablePagination } from "./data-table-pagination"
+} from "@tanstack/react-table";
+import { DataTablePagination } from "./data-table-pagination";
+import { Pencil, Trash2 } from "lucide-react"; // ✅ Import icons
+import { Button } from "@/components/ui/button";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  buttonText?: string
-  searchFunction?: (value: string, searchableColumns: (keyof TData)[]) => void
-  searchableColumns: (keyof TData)[]
-  onButtonClick?: () => void
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  buttonText?: string;
+  searchFunction?: (value: string, searchableColumns: (keyof TData)[]) => void;
+  searchableColumns: (keyof TData)[];
+  onButtonClick?: () => void;
+  onUpdate?: (row: TData) => void; // ✅ Custom update function
+  onDelete?: (row: TData) => void; // ✅ Custom delete function
 }
 
 export function DataTable<TData, TValue>({
@@ -29,12 +33,14 @@ export function DataTable<TData, TValue>({
   searchFunction,
   buttonText,
   onButtonClick,
-  searchableColumns
+  searchableColumns,
+  onUpdate,
+  onDelete,
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState({})
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
     data,
@@ -51,7 +57,7 @@ export function DataTable<TData, TValue>({
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-  })
+  });
 
   return (
     <div className="space-y-4">
@@ -60,7 +66,7 @@ export function DataTable<TData, TValue>({
         searchFunction={searchFunction}
         buttonText={buttonText}
         onButtonClick={onButtonClick}
-        searchableColumns={searchableColumns} // Pass the searchable columns
+        searchableColumns={searchableColumns}
       />
       <div className="rounded-md border">
         <Table>
@@ -72,6 +78,7 @@ export function DataTable<TData, TValue>({
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
+                {(onUpdate || onDelete) && <TableHead className="text-center">Actions</TableHead>}
               </TableRow>
             ))}
           </TableHeader>
@@ -80,15 +87,37 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
+                  {(onUpdate || onDelete) && (
+                    <TableCell className="flex justify-center gap-2">
+                      {onUpdate && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onUpdate(row.original)}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          <Pencil size={18} />
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(row.original)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={columns.length + (onUpdate || onDelete ? 1 : 0)} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -98,5 +127,5 @@ export function DataTable<TData, TValue>({
       </div>
       <DataTablePagination table={table} />
     </div>
-  )
+  );
 }

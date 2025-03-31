@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { columns, Practicum } from "./components/practicums-columns";
 import { useRouter } from "next/navigation";
-import { getPracticums } from "@/lib/api/practicums";
+import { getPracticums, deletePracticum } from "@/lib/api/practicums";
 
 export default function Practicums() {
     const router = useRouter();
@@ -22,6 +22,7 @@ export default function Practicums() {
                 deskripsi: item.description,
                 sks: item.credits,
                 semester: item.semester,
+                id: item.id,  
             })));
         } catch (err: any) {
             setError(err.message);
@@ -48,6 +49,28 @@ export default function Practicums() {
         }
     };
 
+    const handleEdit = (row: Practicum) => {
+        router.push(`/dashboard/practicums/${row.id}/edit`); 
+    };
+
+    const handleDelete = async (row: Practicum) => {
+        if (!row.id) {
+            alert("Error: Practicum ID is missing.");
+            return;
+        }
+    
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${row.nama}?`);
+        if (!confirmDelete) return;
+    
+        try {
+            await deletePracticum(row.id);
+            setData((prevData) => prevData.filter((item) => item.id !== row.id)); // Remove from UI
+        } catch (err: any) {
+            alert("Failed to delete: " + err.message);
+        }
+    };
+    
+
     if (loading) return <p>Loading...</p>;
     if (error) return <p className="text-red-500">{error}</p>;
 
@@ -60,6 +83,8 @@ export default function Practicums() {
                 onButtonClick={() => router.push("/dashboard/practicums/create")}
                 searchFunction={handleSearch}
                 searchableColumns={["kode", "nama", "deskripsi"]}
+                onUpdate={handleEdit}   
+                onDelete={handleDelete} 
             />
         </div>
     );
