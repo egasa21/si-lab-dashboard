@@ -1,49 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { DataTable } from "@/components/data-table"
-import { columns, Practicum } from "./components/practicums-columns"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react";
+import { DataTable } from "@/components/data-table";
+import { columns, Practicum } from "./components/practicums-columns";
+import { useRouter } from "next/navigation";
+import { getPracticums } from "@/lib/api/practicums";
 
 export default function Practicums() {
-    const router = useRouter()
+    const router = useRouter();
+    const [data, setData] = useState<Practicum[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const originalData: Practicum[] = [
-        {
-            kode: "231640731",
-            nama: "Teknologi Mobile",
-            deskripsi: "Praktikum Teknologi Mobile",
-            sks: 3,
-            semester: "Semester Gasal 2023",
-        },
-        {
-            kode: "231612341",
-            nama: "Teknologi Web Lanjut",
-            deskripsi: "Praktikum Teknologi Web Lanjut",
-            sks: 3,
-            semester: "Semester Gasal 2023",
-        },
-    ]
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const practicums = await getPracticums();
+            setData(practicums.map((item: any) => ({
+                kode: item.code,
+                nama: item.name,
+                deskripsi: item.description,
+                sks: parseInt(item.credits),
+                semester: item.semester,
+            })));
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const [data, setData] = useState<Practicum[]>(originalData)
-
-
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleSearch = (value: string, searchableColumns: (keyof Practicum)[]) => {
         if (value === "") {
-            // If search value is empty, reset to original data
-            setData(originalData)
+            fetchData();
         } else {
-            setData((prevData) => {
-                return prevData.filter((item) => {
-                    return searchableColumns.some((column) => {
-                        const columnValue = item[column]?.toString().toLowerCase() ?? ""
-                        return columnValue.includes(value.toLowerCase())
-                    })
-                })
-            })
+            setData((prevData) =>
+                prevData.filter((item) =>
+                    searchableColumns.some((column) =>
+                        item[column]?.toString().toLowerCase().includes(value.toLowerCase())
+                    )
+                )
+            );
         }
-    }
+    };
+
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p className="text-red-500">{error}</p>;
 
     return (
         <div className="space-y-4">
@@ -51,10 +57,10 @@ export default function Practicums() {
                 columns={columns}
                 data={data}
                 buttonText="Add Practicum"
-                onButtonClick={() => { router.push("/dashboard/practicums/create") }}
+                onButtonClick={() => router.push("/dashboard/practicums/create")}
                 searchFunction={handleSearch}
                 searchableColumns={["kode", "nama", "deskripsi"]}
             />
         </div>
-    )
+    );
 }

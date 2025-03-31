@@ -1,6 +1,6 @@
 export const API_BASE_URL = "http://localhost:8080/v1";
 
-function getCookie(name: string): string | null {
+export function getCookie(name: string): string | null {
     return document.cookie
         .split("; ")
         .find(row => row.startsWith(`${name}=`))
