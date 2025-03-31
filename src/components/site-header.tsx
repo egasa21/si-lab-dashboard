@@ -9,10 +9,11 @@ export function SiteHeader() {
 
   const pageTitles: Record<string, string> = {
     "/dashboard": "Dashboard",
-    "/dashboard/practicums": "Practicums",
-    "/dashboard/students": "Students",
+    "/dashboard/practicums": "Praktikum",
+    "/dashboard/students": "Mahasiswa",
     "/dashboard/assignments": "Assignments",
-    "/dashboard/classes": "Classes",
+    "/dashboard/classes": "Kelas Praktikum",
+    "/dashboard/practicums/create": "Tambah Praktikum",
   }
 
   const title = pageTitles[pathname] || "Dashboard"

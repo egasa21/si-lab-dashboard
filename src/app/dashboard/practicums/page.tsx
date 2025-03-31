@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { columns, Practicum } from "./components/practicums-columns"
+import { useRouter } from "next/navigation"
 
 export default function Practicums() {
+    const router = useRouter()
+
     const originalData: Practicum[] = [
         {
             kode: "231640731",
@@ -25,16 +27,6 @@ export default function Practicums() {
 
     const [data, setData] = useState<Practicum[]>(originalData)
 
-    const handleAddPracticum = () => {
-        const newPracticum: Practicum = {
-            kode: "NEW123",
-            nama: "New Practicum",
-            deskripsi: "New Practicum Description",
-            sks: 2,
-            semester: "Semester Genap 2024",
-        }
-        setData([...data, newPracticum])
-    }
 
 
     const handleSearch = (value: string, searchableColumns: (keyof Practicum)[]) => {
@@ -59,7 +51,7 @@ export default function Practicums() {
                 columns={columns}
                 data={data}
                 buttonText="Add Practicum"
-                onButtonClick={handleAddPracticum}
+                onButtonClick={() => { router.push("/dashboard/practicums/create") }}
                 searchFunction={handleSearch}
                 searchableColumns={["kode", "nama", "deskripsi"]}
             />
