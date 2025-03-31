@@ -20,7 +20,7 @@ export default function Practicums() {
                 kode: item.code,
                 nama: item.name,
                 deskripsi: item.description,
-                sks: parseInt(item.credits),
+                sks: item.credits,
                 semester: item.semester,
             })));
         } catch (err: any) {

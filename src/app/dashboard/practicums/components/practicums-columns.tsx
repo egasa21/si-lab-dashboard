@@ -4,7 +4,7 @@ export type Practicum = {
   kode: string
   nama: string
   deskripsi: string
-  sks: number
+  sks: string
   semester: string
 }
 
