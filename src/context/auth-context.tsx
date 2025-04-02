@@ -7,7 +7,7 @@ interface AuthContextType {
     user: any | null;
     loading: boolean;
     logout: () => void;
-    setUser: (user: any) => void; // Add this line
+    setUser: (user: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

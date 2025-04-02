@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col p-4">
-          {children} {/* This swaps out content dynamically */}
+          {children}
         </div>
       </SidebarInset>
     </SidebarProvider>
