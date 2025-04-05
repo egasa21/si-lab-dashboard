@@ -1,5 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 import { PracticumSidebar } from "../components/practicum-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
 
 
 export default function PracticumLayout({
@@ -8,14 +10,19 @@ export default function PracticumLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex min-h-screen bg-gray-100">
-            <PracticumSidebar variant="inset"/>
-            <div className="flex-1 flex flex-col">
-                <main className="flex-1 p-4">
+        <SidebarProvider style={
+            {
+                "--sidebar-width": "calc(var(--spacing) * 72)",
+                "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties
+        }>
+            <PracticumSidebar variant="inset" />
+            <SidebarInset>
+                <div className="flex flex-1 flex-col p-4">
                     {children}
-                </main>
-            </div>
-        </div>
+                </div>
+            </SidebarInset>
+        </SidebarProvider>
     );
 }
 

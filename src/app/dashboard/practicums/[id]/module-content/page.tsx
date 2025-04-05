@@ -1,11 +1,9 @@
-"use client";
+import Editor from "@/components/editor/yoopta-editor";
 
 export default function ModuleContents() {
-
-
     return (
-        <div className="space-y-4">
-
+        <div className="w-full">
+            <Editor/>
         </div>
     );
 }

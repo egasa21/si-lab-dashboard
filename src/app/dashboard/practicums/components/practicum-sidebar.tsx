@@ -2,14 +2,8 @@
 
 import * as React from "react";
 import {
-
-  IconPlus,
-} from "@tabler/icons-react";
-
-import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -23,12 +17,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { DeleteIcon, Trash } from "lucide-react";
+import { Trash } from "lucide-react";
 
 export function PracticumSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, loading, logout } = useAuth();
-
-  if (loading) return <p>Loading...</p>;
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -51,22 +42,22 @@ export function PracticumSidebar({ ...props }: React.ComponentProps<typeof Sideb
             <AccordionTrigger>Dasar Pemrograman</AccordionTrigger>
             <AccordionContent className="flex-col gap-2 flex">
               <div className="border rounded-md p-2 flex flex-row items-center gap-1 justify-between">
-                <div className="flex flex-row items-center gap-1"> {/* Group the left elements */}
+                <div className="flex flex-row items-center gap-1" onClick={()=> {}}> 
                   <span className="border border-gray-300 rounded-md w-6 h-6 flex items-center justify-center text-sm text-gray-600">
                     1
                   </span>
                   <p>Function</p>
                 </div>
-                <span className=""><Trash className="size-4" /></span>
+                <span onClick={() => { }}><Trash className="size-4" /></span>
               </div>
               <div className="border rounded-md p-2 flex flex-row items-center gap-1 justify-between">
-                <div className="flex flex-row items-center gap-1"> {/* Group the left elements */}
+                <div className="flex flex-row items-center gap-1" onClick={()=> {}}> 
                   <span className="border border-gray-300 rounded-md w-6 h-6 flex items-center justify-center text-sm text-gray-600">
                     1
                   </span>
                   <p>Function</p>
                 </div>
-                <span className=""><Trash className="size-4" /></span>
+                <span onClick={() => { }}><Trash className="size-4" /></span>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -74,22 +65,22 @@ export function PracticumSidebar({ ...props }: React.ComponentProps<typeof Sideb
             <AccordionTrigger>Dasar Pemrograman</AccordionTrigger>
             <AccordionContent className="flex-col gap-2 flex">
               <div className="border rounded-md p-2 flex flex-row items-center gap-1 justify-between">
-                <div className="flex flex-row items-center gap-1"> {/* Group the left elements */}
+                <div className="flex flex-row items-center gap-1" onClick={()=> {}}> 
                   <span className="border border-gray-300 rounded-md w-6 h-6 flex items-center justify-center text-sm text-gray-600">
                     1
                   </span>
                   <p>Function</p>
                 </div>
-                <span className=""><Trash className="size-4" /></span>
+                <span onClick={() => { }}><Trash className="size-4" /></span>
               </div>
               <div className="border rounded-md p-2 flex flex-row items-center gap-1 justify-between">
-                <div className="flex flex-row items-center gap-1"> {/* Group the left elements */}
+                <div className="flex flex-row items-center gap-1" onClick={()=> {}}> 
                   <span className="border border-gray-300 rounded-md w-6 h-6 flex items-center justify-center text-sm text-gray-600">
                     1
                   </span>
                   <p>Function</p>
                 </div>
-                <span className=""><Trash className="size-4" /></span>
+                <span onClick={() => { }}><Trash className="size-4" /></span>
               </div>
             </AccordionContent>
           </AccordionItem>
