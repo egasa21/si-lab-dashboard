@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CardPracticum } from "./components/card-practicum";
 import defaultImage from "../../../../public/default-image.jpg";
@@ -13,12 +13,24 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircleIcon } from "lucide-react";
+import { PlusCircleIcon, Trash } from "lucide-react";
+import { PracticumModulModal } from "./components/practicum-module";
+import { CreatePracticumDialog } from "./components/create-practicum-dialog";
+
+// Types
+type ModuleType = {
+    id: number;
+    title: string;
+    materials: string[];
+    creatingMaterial?: boolean;
+    newMaterialTitle?: string;
+};
 
 export default function Practicums() {
     const router = useRouter();
+    const [isPracModulesOpen, setPracModulesOpen] = useState(false);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-    // Dummy Practicum Data
     const [data, setData] = useState([
         {
             id: "1",
@@ -50,6 +62,10 @@ export default function Practicums() {
         },
     ]);
 
+
+
+
+
     const handleAddUser = (id: string) => {
         console.log(`Add user to practicum with ID: ${id}`);
     };
@@ -58,21 +74,17 @@ export default function Practicums() {
         router.push(`/dashboard/practicums/${id}/edit`);
     };
 
+    const [open, setOpen] = useState(false);
+    const [selectedPracticumId, setSelectedPracticumId] = useState<string | null>(null);
+
     const handleDelete = (id: string) => {
         setSelectedPracticumId(id);
         setOpen(true);
     };
 
-    const [open, setOpen] = useState(false);
-    const [selectedPracticumId, setSelectedPracticumId] = useState<string | null>(null);
-
     const confirmDelete = () => {
-        if (!selectedPracticumId) {
-            alert("Error: Practicum ID is missing.");
-            return;
-        }
+        if (!selectedPracticumId) return;
         setData((prevData) => prevData.filter((item) => item.id !== selectedPracticumId));
-        console.log(`Deleted practicum with ID: ${selectedPracticumId}`);
         setOpen(false);
         setSelectedPracticumId(null);
     };
@@ -82,11 +94,19 @@ export default function Practicums() {
         setSelectedPracticumId(null);
     };
 
+
+
+
+
     return (
         <div>
             <div className="flex justify-end mb-3">
-                <Button variant="outline"><PlusCircleIcon/>Buat Praktikum Baru </Button>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                    <PlusCircleIcon className="mr-2 h-4 w-4" />
+                    Buat Praktikum Baru
+                </Button>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {data.map((practicum) => (
                     <CardPracticum
@@ -95,7 +115,7 @@ export default function Practicums() {
                         name={practicum.name}
                         semester={practicum.semester}
                         updatedAt={practicum.updatedAt}
-                        onClick={() => console.log(`Card clicked: ${practicum.name}`)}
+                        onClick={() => setPracModulesOpen(true)}
                         onAddUser={() => handleAddUser(practicum.id)}
                         onEdit={() => handleEdit(practicum.id)}
                         onDelete={() => handleDelete(practicum.id)}
@@ -103,6 +123,7 @@ export default function Practicums() {
                 ))}
             </div>
 
+            {/* Delete Confirmation Dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
@@ -112,15 +133,24 @@ export default function Practicums() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={cancelDelete}>
+                        <Button variant="secondary" onClick={cancelDelete}>
                             Batal
                         </Button>
-                        <Button type="button" variant="destructive" onClick={confirmDelete}>
+                        <Button variant="destructive" onClick={confirmDelete}>
                             Hapus
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Practicum Dialog */}
+            <CreatePracticumDialog
+                open={isCreateDialogOpen}
+                onOpenChange={setIsCreateDialogOpen}
+            />
+
+            <PracticumModulModal isOpen={isPracModulesOpen} onClose={() => setPracModulesOpen(false)} />
+
         </div>
     );
 }

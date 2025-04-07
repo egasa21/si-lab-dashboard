@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import YooptaEditor, { createYooptaEditor, PluginElementRenderProps, YooptaContentValue, YooptaOnChangeOptions } from "@yoopta/editor";
 import NextImage from 'next/image';
 
@@ -27,28 +27,7 @@ import LinkTool, { DefaultLinkToolRender } from '@yoopta/link-tool';
 // Import marks
 import { Bold, Italic, CodeMark, Underline, Strike, Highlight } from '@yoopta/marks';
 import { uploadToCloudinary } from "@/lib/cloudinary";
-
-// Custom Image component using Next.js Image
-const CustomImageComponent = ({ attributes, children, element, ...rest }: PluginElementRenderProps) => {
-    const { src, alt, sizes } = element;
-
-    return (
-        <div {...attributes} className="relative my-4 w-full">
-            <div contentEditable={false} className="w-full">
-                <img
-                    src={src}
-                    alt={alt || 'Image'}
-                    className="max-w-full h-auto rounded-md"
-                    style={{
-                        width: sizes?.width ? `${Math.min(sizes.width, 800)}px` : '100%',
-                        maxWidth: '100%',
-                    }}
-                />
-            </div>
-            {children}
-        </div>
-    );
-};
+import { INIT_VALUE } from "./init-value";
 
 const plugins = [
     Paragraph,
@@ -144,20 +123,26 @@ const TOOLS = {
 
 const MARKS = [Bold, Italic, CodeMark, Underline, Strike, Highlight];
 
-export default function Editor() {
+interface EditorProps {
+    onInit?: (editorInstance: ReturnType<typeof createYooptaEditor>) => void;
+}export default function Editor({ onInit }: EditorProps) {
     const editor = useMemo(() => createYooptaEditor(), []);
-    const [value, setValue] = useState<YooptaContentValue>();
+    const [value, setValue] = useState(INIT_VALUE);
     const selectionRef = useRef(null);
+
+    // Pass editor instance up to parent
+    useEffect(() => {
+        if (onInit) onInit(editor);
+    }, [editor, onInit]);
 
     const onChange = (value: YooptaContentValue, options: YooptaOnChangeOptions) => {
         setValue(value);
-        console.log("Editor content updated:", value);
     };
 
     return (
-        <div className="w-full h-full min-h-[500px] md:py-[100px] md:pl-[200px] md:pr-[80px] px-[20px] pt-[80px] pb-[40px] flex justify-center" ref={selectionRef}>
+        <div className="h-full md:py-[100px] md:pl-[200px] md:pr-[80px] px-[20px] pt-[80px] pb-[40px] flex justify-center" ref={selectionRef}>
             <YooptaEditor
-                width="100%"
+                width="600px"
                 editor={editor}
                 plugins={plugins}
                 tools={TOOLS}
@@ -166,7 +151,7 @@ export default function Editor() {
                 onChange={onChange}
                 placeholder="Type something"
                 selectionBoxRoot={selectionRef}
-                autoFocus
+                autoFocus={true}
             />
         </div>
     );

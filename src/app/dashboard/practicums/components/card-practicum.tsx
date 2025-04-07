@@ -37,9 +37,8 @@ export function CardPracticum({
   onDelete,
 }: CardPracticumProps) {
   return (
-    <Card 
-      onClick={onClick} 
-      className={cn("w-[360px] cursor-pointer hover:shadow-lg transition-shadow duration-200")}
+    <Card
+      className={cn("w-[360px]")}
     >
       <CardContent className="grid gap-2">
         <Image
@@ -51,7 +50,7 @@ export function CardPracticum({
         />
         <div className="flex flex-row justify-between">
           <div>
-            <CardTitle className="py-4">{name}</CardTitle>
+            <CardTitle className="py-4 cursor-pointer" onClick={onClick} >{name}</CardTitle>
             <Badge variant="outline">
               <p className="text-black">{semester}</p>
             </Badge>
@@ -68,7 +67,7 @@ export function CardPracticum({
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <span 
+                <span
                   onClick={(e) => e.stopPropagation()} // Prevent triggering card click
                   className="border rounded-full p-1 shadow-xs hover:scale-105 transition-transform duration-150 cursor-pointer"
                 >
