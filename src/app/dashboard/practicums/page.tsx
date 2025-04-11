@@ -29,7 +29,7 @@ type ModuleType = {
 export default function Practicums() {
     const router = useRouter();
     const [isPracModulesOpen, setPracModulesOpen] = useState(false);
-    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
 
     const [data, setData] = useState([
         {
@@ -61,9 +61,6 @@ export default function Practicums() {
             updatedAt: "1 week ago",
         },
     ]);
-
-
-
 
 
     const handleAddUser = (id: string) => {
@@ -101,7 +98,7 @@ export default function Practicums() {
     return (
         <div>
             <div className="flex justify-end mb-3">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                <Button variant="outline" onClick={() => router.push('/dashboard/practicums/create')}>
                     <PlusCircleIcon className="mr-2 h-4 w-4" />
                     Buat Praktikum Baru
                 </Button>
@@ -142,12 +139,6 @@ export default function Practicums() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-            {/* Practicum Dialog */}
-            <CreatePracticumDialog
-                open={isCreateDialogOpen}
-                onOpenChange={setIsCreateDialogOpen}
-            />
 
             <PracticumModulModal isOpen={isPracModulesOpen} onClose={() => setPracModulesOpen(false)} />
 

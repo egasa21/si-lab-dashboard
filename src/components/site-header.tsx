@@ -13,7 +13,7 @@ export function SiteHeader() {
     "/dashboard/students": "Mahasiswa",
     "/dashboard/assignments": "Assignments",
     "/dashboard/classes": "Kelas Praktikum",
-    "/dashboard/practicums/create": "Tambah Praktikum",
+    "/dashboard/practicums/create": "Buat Praktikum Baru",
   }
 
   const title = pageTitles[pathname] || "Dashboard"
