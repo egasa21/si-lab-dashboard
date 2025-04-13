@@ -88,3 +88,45 @@ export async function updatePracticum(id: string, practicum: any) {
     if (!response.ok) throw new Error("Failed to update practicum");
     return response.json();
 }
+
+
+export async function getModulesWithMaterials(practicumId: string) {
+    const token = getCookie("access_token");
+    if (!token) throw new Error("Unauthorized");
+
+    const response = await fetch(`${API_BASE_URL}/practicums/${practicumId}/modules-with-materials`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.meta?.message || "Failed to fetch modules and materials");
+    }
+
+    const result = await response.json();
+    return result.data.modules;
+}
+
+
+export async function getPracticumModuleContent(materialId: string) {
+    const token = getCookie("access_token");
+    if (!token) throw new Error("Unauthorized");
+
+    const response = await fetch(`${API_BASE_URL}/practicum-module-contents/${materialId}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.meta?.message || "Failed to fetch module content");
+    }
+
+    const result = await response.json();
+    return result.data.content;
+}

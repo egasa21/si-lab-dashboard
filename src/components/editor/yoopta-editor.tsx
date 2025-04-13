@@ -124,20 +124,26 @@ const TOOLS = {
 const MARKS = [Bold, Italic, CodeMark, Underline, Strike, Highlight];
 
 interface EditorProps {
+    value: YooptaContentValue;
     onInit?: (editorInstance: ReturnType<typeof createYooptaEditor>) => void;
-}export default function Editor({ onInit }: EditorProps) {
+    onChange?: (value: YooptaContentValue, options: YooptaOnChangeOptions) => void;
+}
+
+export default function Editor({ value, onInit, onChange }: EditorProps) {
     const editor = useMemo(() => createYooptaEditor(), []);
-    const [value, setValue] = useState(INIT_VALUE);
     const selectionRef = useRef(null);
 
-    // Pass editor instance up to parent
     useEffect(() => {
         if (onInit) onInit(editor);
     }, [editor, onInit]);
 
-    const onChange = (value: YooptaContentValue, options: YooptaOnChangeOptions) => {
-        setValue(value);
+    const handleChange = (newValue: YooptaContentValue, options: YooptaOnChangeOptions) => {
+        if (onChange) {
+            onChange(newValue, options);
+        }
     };
+
+    
 
     return (
         <div className="h-full md:py-[100px] md:pl-[200px] md:pr-[80px] px-[20px] pt-[80px] pb-[40px] flex justify-center" ref={selectionRef}>
@@ -148,7 +154,7 @@ interface EditorProps {
                 tools={TOOLS}
                 marks={MARKS}
                 value={value}
-                onChange={onChange}
+                onChange={handleChange} 
                 placeholder="Type something"
                 selectionBoxRoot={selectionRef}
                 autoFocus={true}

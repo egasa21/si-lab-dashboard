@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CardPracticum } from "./components/card-practicum";
 import defaultImage from "../../../../public/default-image.jpg";
@@ -13,55 +13,35 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircleIcon, Trash } from "lucide-react";
+import { PlusCircleIcon } from "lucide-react";
 import { PracticumModulModal } from "./components/practicum-module";
-import { CreatePracticumDialog } from "./components/create-practicum-dialog";
+import { getPracticums, deletePracticum } from "@/lib/api/practicums";
 
-// Types
-type ModuleType = {
-    id: number;
-    title: string;
-    materials: string[];
-    creatingMaterial?: boolean;
-    newMaterialTitle?: string;
+type PracticumType = {
+    id: string;
+    name: string;
+    semester: string;
+    updated_at: string;
 };
 
 export default function Practicums() {
     const router = useRouter();
+    const [data, setData] = useState<PracticumType[]>([]);
     const [isPracModulesOpen, setPracModulesOpen] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [selectedPracticumId, setSelectedPracticumId] = useState<string | null>(null);
 
-
-    const [data, setData] = useState([
-        {
-            id: "1",
-            image: defaultImage,
-            name: "Pengujian dan Penjaminan Mutu Perangkat Lunak",
-            semester: "Gasal 2024/2025",
-            updatedAt: "4h ago",
-        },
-        {
-            id: "2",
-            image: defaultImage,
-            name: "Rekayasa Perangkat Lunak",
-            semester: "Genap 2024/2025",
-            updatedAt: "2 days ago",
-        },
-        {
-            id: "3",
-            image: defaultImage,
-            name: "Pemrograman Berbasis Web",
-            semester: "Gasal 2025/2026",
-            updatedAt: "1 week ago",
-        },
-        {
-            id: "4",
-            image: defaultImage,
-            name: "Desain dan Pengalaman Pengguna",
-            semester: "Gasal 2025/2026",
-            updatedAt: "1 week ago",
-        },
-    ]);
-
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const result = await getPracticums();
+                setData(result);
+            } catch (error) {
+                console.error("Failed to fetch practicums", error);
+            }
+        }
+        fetchData();
+    }, []);
 
     const handleAddUser = (id: string) => {
         console.log(`Add user to practicum with ID: ${id}`);
@@ -71,29 +51,28 @@ export default function Practicums() {
         router.push(`/dashboard/practicums/${id}/edit`);
     };
 
-    const [open, setOpen] = useState(false);
-    const [selectedPracticumId, setSelectedPracticumId] = useState<string | null>(null);
-
     const handleDelete = (id: string) => {
         setSelectedPracticumId(id);
         setOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!selectedPracticumId) return;
-        setData((prevData) => prevData.filter((item) => item.id !== selectedPracticumId));
-        setOpen(false);
-        setSelectedPracticumId(null);
+        try {
+            await deletePracticum(selectedPracticumId);
+            setData((prevData) => prevData.filter((item) => item.id !== selectedPracticumId));
+        } catch (err) {
+            console.error("Failed to delete practicum:", err);
+        } finally {
+            setOpen(false);
+            setSelectedPracticumId(null);
+        }
     };
 
     const cancelDelete = () => {
         setOpen(false);
         setSelectedPracticumId(null);
     };
-
-
-
-
 
     return (
         <div>
@@ -108,11 +87,18 @@ export default function Practicums() {
                 {data.map((practicum) => (
                     <CardPracticum
                         key={practicum.id}
-                        image={practicum.image}
+                        image={defaultImage}
                         name={practicum.name}
                         semester={practicum.semester}
-                        updatedAt={practicum.updatedAt}
-                        onClick={() => setPracModulesOpen(true)}
+                        updatedAt={new Date(practicum.updated_at).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                        })}
+                        onClick={() => {
+                            setSelectedPracticumId(practicum.id);
+                            setPracModulesOpen(true)}
+                        }
                         onAddUser={() => handleAddUser(practicum.id)}
                         onEdit={() => handleEdit(practicum.id)}
                         onDelete={() => handleDelete(practicum.id)}
@@ -140,8 +126,7 @@ export default function Practicums() {
                 </DialogContent>
             </Dialog>
 
-            <PracticumModulModal isOpen={isPracModulesOpen} onClose={() => setPracModulesOpen(false)} />
-
+            <PracticumModulModal isOpen={isPracModulesOpen} onClose={() => setPracModulesOpen(false)} practicumId={selectedPracticumId}/>
         </div>
     );
 }

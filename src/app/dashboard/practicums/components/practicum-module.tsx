@@ -1,42 +1,125 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PlusCircleIcon, Trash } from "lucide-react";
 import Editor from "@/components/editor/yoopta-editor";
-import { createYooptaEditor } from "@yoopta/editor";
-
+import { createYooptaEditor, YooptaContentValue, YooptaOnChangeOptions } from "@yoopta/editor";
+import { getModulesWithMaterials, getPracticumModuleContent } from "@/lib/api/practicums";
+import { INIT_VALUE } from "@/components/editor/init-value";
 
 interface FullScreenModalProps {
   isOpen: boolean;
   onClose: () => void;
+  practicumId: string | null;
 }
 
-export const PracticumModulModal = ({ isOpen, onClose }: FullScreenModalProps) => {
+export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreenModalProps) => {
   const [creatingModule, setCreatingModule] = useState(false);
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [editorInstance, setEditorInstance] = useState<ReturnType<typeof createYooptaEditor> | null>(null);
+  const [editorValue, setEditorValue] = useState<YooptaContentValue>(INIT_VALUE);
+  const [expandedModuleId, setExpandedModuleId] = useState<string[]>([]);
+  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
+  const [loadingEditorContent, setLoadingEditorContent] = useState(false);
+
+  useEffect(() => {
+    if (selectedMaterial && isOpen) {
+      const fetchContent = async () => {
+        try {
+          setLoadingEditorContent(true);
+          const content = await getPracticumModuleContent(selectedMaterial);
+          setEditorValue(content);
+        } catch (err) {
+          console.error("Failed to fetch material content:", err);
+        } finally {
+          setLoadingEditorContent(false);
+        }
+      };
+
+      fetchContent();
+    }
+  }, [selectedMaterial, isOpen]);
+
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedMaterial(null);
+      setModules([]);
+      setNewModuleTitle("");
+      setCreatingModule(false);
+      setSelectedMaterial(null);
+      setEditorValue(INIT_VALUE);
+      setEditorInstance(null);
+      setExpandedModuleId([]);
+      setLoadingEditorContent(false);
+    }
+  }, [isOpen]);
+
+
+  const handleEditorChange = (newValue: YooptaContentValue, options: YooptaOnChangeOptions) => {
+
+    setEditorValue(newValue);
+  };
+
 
   const [modules, setModules] = useState<
     {
       id: number;
       title: string;
-      materials: string[];
+      materials: {
+        id: number;
+        title: string;
+      }[];
       creatingMaterial?: boolean;
       newMaterialTitle?: string;
     }[]
   >([]);
 
+  useEffect(() => {
+    if (!isOpen || !practicumId) return;
+
+    async function fetchModules() {
+      try {
+        if (practicumId) {
+          const fetchedModules = await getModulesWithMaterials(practicumId);
+          const formatted = fetchedModules.map((mod: any) => ({
+            id: mod.id,
+            title: mod.title,
+            materials: mod.materials.map((mat: any) => ({
+              id: mat.id,
+              title: mat.title
+            })),
+          }));
+          setModules(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to load modules:", err);
+      }
+    }
+
+    fetchModules();
+  }, [isOpen, practicumId]);
+
   const handleCreateModule = () => {
     if (!newModuleTitle.trim()) return;
-    setModules((prev) => [
-      ...prev,
-      { id: Date.now(), title: newModuleTitle.trim(), materials: [] },
-    ]);
+
+    const newModule = {
+      id: Date.now(),
+      title: newModuleTitle.trim(),
+      materials: [],
+    };
+
+    setModules((prev) => [...prev, newModule]);
     setNewModuleTitle("");
     setCreatingModule(false);
+    setExpandedModuleId([`module-${newModule.id}`]);
+  };
+
+  const handleMaterialClick = (materialId: string) => {
+    setSelectedMaterial(materialId);
   };
 
   const handleAddMaterial = (moduleId: number) => {
@@ -64,7 +147,7 @@ export const PracticumModulModal = ({ isOpen, onClose }: FullScreenModalProps) =
     }
 
     const content = editorInstance.getEditorValue();
-    const contentJSON = JSON.stringify(content)
+    const contentJSON = JSON.stringify(content);
     console.log("Saving content:", content);
     console.log("JSON content:", contentJSON);
 
@@ -76,9 +159,16 @@ export const PracticumModulModal = ({ isOpen, onClose }: FullScreenModalProps) =
     setModules((prev) =>
       prev.map((mod) => {
         if (mod.id === moduleId && mod.newMaterialTitle?.trim()) {
+          // You'll need to create the ID server-side normally
+          // This is just a temporary client-side ID for new materials
+          const tempId = Math.floor(Math.random() * -1000) - 1; // Negative ID to indicate temporary
+
           return {
             ...mod,
-            materials: [...mod.materials, mod.newMaterialTitle],
+            materials: [...mod.materials, {
+              id: tempId,
+              title: mod.newMaterialTitle
+            }],
             creatingMaterial: false,
             newMaterialTitle: "",
           };
@@ -132,7 +222,7 @@ export const PracticumModulModal = ({ isOpen, onClose }: FullScreenModalProps) =
               </button>
             </div>
 
-            <Accordion type="multiple">
+            <Accordion type="multiple" value={expandedModuleId} onValueChange={setExpandedModuleId}>
               {modules.map((module) => (
                 <AccordionItem key={module.id} value={`module-${module.id}`}>
                   <AccordionTrigger>{module.title}</AccordionTrigger>
@@ -168,13 +258,14 @@ export const PracticumModulModal = ({ isOpen, onClose }: FullScreenModalProps) =
                     {module.materials.map((material, index) => (
                       <div
                         key={index}
-                        className="border rounded-md p-2 flex flex-row items-center gap-1 justify-between"
+                        onClick={() => handleMaterialClick(material.id.toString())}
+                        className="border rounded-md p-2 flex flex-row items-center gap-1 justify-between hover:cursor-pointer"
                       >
                         <div className="flex flex-row items-center gap-1">
                           <span className="border border-gray-300 rounded-md w-6 h-6 flex items-center justify-center text-sm text-gray-600">
                             {index + 1}
                           </span>
-                          <p>{material}</p>
+                          <p>{material.title}</p>
                         </div>
                         <span
                           onClick={() => handleDeleteMaterial(module.id, index)}
@@ -221,7 +312,17 @@ export const PracticumModulModal = ({ isOpen, onClose }: FullScreenModalProps) =
 
           {/* Main Editor */}
           <div className="flex-1 h-full overflow-auto p-6">
-            <Editor onInit={setEditorInstance} />
+            {selectedMaterial && !loadingEditorContent && editorValue ? (
+              <Editor
+                value={editorValue}
+                onInit={setEditorInstance}
+                onChange={handleEditorChange}
+              />
+            ) : (
+              <div className="text-gray-400 text-sm h-full flex items-center justify-center">
+                {loadingEditorContent ? "Loading content..." : "No material selected."}
+              </div>
+            )}
           </div>
         </div>
       </div>
