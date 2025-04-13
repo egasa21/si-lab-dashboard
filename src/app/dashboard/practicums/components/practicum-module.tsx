@@ -24,17 +24,23 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
   const [expandedModuleId, setExpandedModuleId] = useState<string[]>([]);
   const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
   const [loadingEditorContent, setLoadingEditorContent] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
 
   useEffect(() => {
     if (selectedMaterial && isOpen) {
       const fetchContent = async () => {
         try {
           setLoadingEditorContent(true);
+          setEditorReady(false);
           const content = await getPracticumModuleContent(selectedMaterial);
-          setEditorValue(content);
+
+          setTimeout(() => {
+            setEditorValue(content);
+            setLoadingEditorContent(false);
+            setTimeout(() => setEditorReady(true), 100);
+          }, 50);
         } catch (err) {
           console.error("Failed to fetch material content:", err);
-        } finally {
           setLoadingEditorContent(false);
         }
       };
@@ -315,8 +321,11 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
             {selectedMaterial && !loadingEditorContent && editorValue ? (
               <Editor
                 value={editorValue}
-                onInit={setEditorInstance}
+                onInit={(instance) => {
+                  setEditorInstance(instance);
+                }}
                 onChange={handleEditorChange}
+                isReady={editorReady}
               />
             ) : (
               <div className="text-gray-400 text-sm h-full flex items-center justify-center">

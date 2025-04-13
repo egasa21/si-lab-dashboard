@@ -127,9 +127,10 @@ interface EditorProps {
     value: YooptaContentValue;
     onInit?: (editorInstance: ReturnType<typeof createYooptaEditor>) => void;
     onChange?: (value: YooptaContentValue, options: YooptaOnChangeOptions) => void;
+    isReady?: boolean;
 }
 
-export default function Editor({ value, onInit, onChange }: EditorProps) {
+export default function Editor({ value, onInit, onChange, isReady = false }: EditorProps) {
     const editor = useMemo(() => createYooptaEditor(), []);
     const selectionRef = useRef(null);
 
@@ -137,13 +138,31 @@ export default function Editor({ value, onInit, onChange }: EditorProps) {
         if (onInit) onInit(editor);
     }, [editor, onInit]);
 
+    useEffect(() => {
+        if (isReady && editor) {
+            try {
+                // Wait a bit before trying to focus
+                const timer = setTimeout(() => {
+                    try {
+                        editor.focus();
+                    } catch (e) {
+                        console.log("Could not focus editor:", e);
+                    }
+                }, 200);
+
+                return () => clearTimeout(timer);
+            } catch (e) {
+                console.log("Error in focus effect:", e);
+            }
+        }
+    }, [isReady, editor, value]);
+
     const handleChange = (newValue: YooptaContentValue, options: YooptaOnChangeOptions) => {
         if (onChange) {
             onChange(newValue, options);
         }
     };
 
-    
 
     return (
         <div className="h-full md:py-[100px] md:pl-[200px] md:pr-[80px] px-[20px] pt-[80px] pb-[40px] flex justify-center" ref={selectionRef}>
@@ -154,10 +173,10 @@ export default function Editor({ value, onInit, onChange }: EditorProps) {
                 tools={TOOLS}
                 marks={MARKS}
                 value={value}
-                onChange={handleChange} 
+                onChange={handleChange}
                 placeholder="Type something"
                 selectionBoxRoot={selectionRef}
-                autoFocus={true}
+                autoFocus={false}
             />
         </div>
     );

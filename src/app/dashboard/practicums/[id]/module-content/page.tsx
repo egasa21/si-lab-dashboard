@@ -4,7 +4,7 @@ import NoLayout from "@/components/no-layout";
 export default function ModuleContents() {
     return (
         <div>
-            <Editor/>
+            {/* <Editor/> */}
         </div>
     );
 }
