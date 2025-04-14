@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { PlusCircleIcon, Trash } from "lucide-react";
 import Editor from "@/components/editor/yoopta-editor";
 import { createYooptaEditor, YooptaContentValue, YooptaOnChangeOptions } from "@yoopta/editor";
-import { getModulesWithMaterials, getPracticumModuleContent } from "@/lib/api/practicums";
+import {
+  createPracticumModule,
+  createPracticumModuleContent,
+  getModulesWithMaterials,
+  getPracticumModuleContent,
+  updatePracticumModuleContent
+} from "@/lib/api/practicums";
 import { INIT_VALUE } from "@/components/editor/init-value";
 
 interface FullScreenModalProps {
@@ -25,6 +31,9 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
   const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
   const [loadingEditorContent, setLoadingEditorContent] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
+  const [currentMaterialContentId, setCurrentMaterialContentId] = useState<number | null>(null);
+  const [currentMaterialMeta, setCurrentMaterialMeta] = useState<{ title: string; moduleId: number } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (selectedMaterial && isOpen) {
@@ -32,23 +41,46 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
         try {
           setLoadingEditorContent(true);
           setEditorReady(false);
-          const content = await getPracticumModuleContent(selectedMaterial);
 
-          setTimeout(() => {
-            setEditorValue(content);
-            setLoadingEditorContent(false);
-            setTimeout(() => setEditorReady(true), 100);
-          }, 50);
+          // Check if it's a temporary material (negative ID)
+          if (parseInt(selectedMaterial) < 0) {
+            // For new materials, set the editor value to INIT_VALUE
+            setTimeout(() => {
+              setEditorValue(INIT_VALUE);
+              setCurrentMaterialContentId(null);
+              setLoadingEditorContent(false);
+              setTimeout(() => setEditorReady(true), 100);
+            }, 50);
+          } else {
+            // For existing materials, fetch content from the server
+            try {
+              const content = await getPracticumModuleContent(selectedMaterial);
+              setCurrentMaterialContentId(content.id);
+
+              setTimeout(() => {
+                setEditorValue(content);
+                setLoadingEditorContent(false);
+                setTimeout(() => setEditorReady(true), 100);
+              }, 50);
+            } catch (error) {
+              console.error("Material content not found, using default value:", error);
+              setCurrentMaterialContentId(null);
+              setEditorValue(INIT_VALUE);
+              setLoadingEditorContent(false);
+              setTimeout(() => setEditorReady(true), 100);
+            }
+          }
         } catch (err) {
           console.error("Failed to fetch material content:", err);
           setLoadingEditorContent(false);
+          setEditorValue(INIT_VALUE);
+          setTimeout(() => setEditorReady(true), 100);
         }
       };
 
       fetchContent();
     }
   }, [selectedMaterial, isOpen]);
-
 
   useEffect(() => {
     if (!isOpen) {
@@ -61,15 +93,14 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
       setEditorInstance(null);
       setExpandedModuleId([]);
       setLoadingEditorContent(false);
+      setCurrentMaterialContentId(null);
+      setCurrentMaterialMeta(null);
     }
   }, [isOpen]);
 
-
   const handleEditorChange = (newValue: YooptaContentValue, options: YooptaOnChangeOptions) => {
-
     setEditorValue(newValue);
   };
-
 
   const [modules, setModules] = useState<
     {
@@ -109,23 +140,46 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
     fetchModules();
   }, [isOpen, practicumId]);
 
-  const handleCreateModule = () => {
-    if (!newModuleTitle.trim()) return;
+  const handleCreateModule = async () => {
+    if (!newModuleTitle.trim() || !practicumId) return;
 
-    const newModule = {
-      id: Date.now(),
-      title: newModuleTitle.trim(),
-      materials: [],
-    };
+    try {
+      const newModule = await createPracticumModule({
+        title: newModuleTitle.trim(),
+        practicum_id: practicumId,
+      });
 
-    setModules((prev) => [...prev, newModule]);
-    setNewModuleTitle("");
-    setCreatingModule(false);
-    setExpandedModuleId([`module-${newModule.id}`]);
+      // Update modules state with new module
+      setModules((prev) => [
+        ...prev,
+        {
+          id: newModule.id,
+          title: newModule.title,
+          materials: [],
+        },
+      ]);
+
+      setNewModuleTitle("");
+      setCreatingModule(false);
+      setExpandedModuleId([`module-${newModule.id}`]);
+
+    } catch (err) {
+      console.error("Failed to create module:", err);
+    }
   };
 
   const handleMaterialClick = (materialId: string) => {
+    console.log(materialId);
+    
     setSelectedMaterial(materialId);
+
+    // Find the module containing this material
+    modules.forEach((mod) => {
+      const material = mod.materials.find((m) => m.id.toString() === materialId);
+      if (material) {
+        setCurrentMaterialMeta({ title: material.title, moduleId: mod.id });
+      }
+    });
   };
 
   const handleAddMaterial = (moduleId: number) => {
@@ -147,46 +201,135 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
   };
 
   const handleSave = async () => {
-    if (!editorInstance) {
-      console.warn("Editor not ready yet!");
+    console.log("Attempting to save:", {
+      editorInstance,
+      selectedMaterial,
+      currentMaterialMeta,
+    });
+    
+    if (!editorInstance || !selectedMaterial || !currentMaterialMeta) return;
+
+    try {
+      setIsSaving(true);
+      const content = editorInstance.getEditorValue();
+
+      const currentModule = modules.find((mod) => mod.id === currentMaterialMeta.moduleId);
+      const currentIndex = currentModule?.materials.findIndex((m) => m.id.toString() === selectedMaterial);
+
+      const payload = {
+        id_module: currentMaterialMeta.moduleId,
+        title: currentMaterialMeta.title,
+        content,
+        sequence: currentIndex !== undefined && currentIndex >= 0 ? currentIndex + 1 : 1,
+      };
+
+      if (selectedMaterial) {
+        const updatedContent = await updatePracticumModuleContent(Number(selectedMaterial), payload);
+        console.log("Content updated successfully", updatedContent);
+      } 
+    } catch (error) {
+      console.error("Failed to save material content:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleMaterialSubmit = async (moduleId: number) => {
+    const module = modules.find(m => m.id === moduleId);
+    if (!module?.newMaterialTitle?.trim()) {
+      setModules(prev =>
+        prev.map(mod => ({ ...mod, creatingMaterial: false }))
+      );
       return;
     }
 
-    const content = editorInstance.getEditorValue();
-    const contentJSON = JSON.stringify(content);
-    console.log("Saving content:", content);
-    console.log("JSON content:", contentJSON);
+    const newMaterialTitle = module.newMaterialTitle.trim();
 
-    // TODO: send `content` to server
-    // await fetch('/api/save', { method: 'POST', body: JSON.stringify(content) })
+    try {
+      // Generate a temporary negative ID for the new material
+      const tempId = Math.floor(Math.random() * -1000) - 1;
+
+      // Update the UI immediately with the new material
+      setModules(prev =>
+        prev.map(mod => {
+          if (mod.id === moduleId) {
+            return {
+              ...mod,
+              materials: [...mod.materials, {
+                id: tempId,
+                title: newMaterialTitle
+              }],
+              creatingMaterial: false,
+              newMaterialTitle: "",
+            };
+          }
+          return { ...mod, creatingMaterial: false };
+        })
+      );
+
+      // Select the new material immediately
+      setSelectedMaterial(tempId.toString());
+      setCurrentMaterialMeta({ title: newMaterialTitle, moduleId });
+
+      // Create a new material content with INIT_VALUE
+      const currentModuleForNew = modules.find(m => m.id === moduleId);
+      const materialIndex = currentModuleForNew?.materials.length || 0;
+
+      const payload = {
+        id_module: moduleId,
+        title: newMaterialTitle,
+        content: INIT_VALUE,
+        sequence: materialIndex + 1,
+      };
+
+      // Create new content in the database
+      const newContent = await createPracticumModuleContent(payload);
+
+      // Update the material ID from temporary to real after creation
+      setModules(prev =>
+        prev.map(mod => {
+          if (mod.id === moduleId) {
+            return {
+              ...mod,
+              materials: mod.materials.map(mat => {
+                if (mat.id === tempId) {
+                  return { ...mat, id: newContent.id };
+                }
+                return mat;
+              })
+            };
+          }
+          return mod;
+        })
+      );
+
+      // Update the selected material to the new real ID
+      setSelectedMaterial(newContent.id.toString());
+      setCurrentMaterialContentId(newContent.id);
+
+      console.log("New material created successfully", newContent);
+    } catch (error) {
+      console.error("Failed to create new material:", error);
+    }
   };
 
-  const handleMaterialSubmit = (moduleId: number) => {
-    setModules((prev) =>
-      prev.map((mod) => {
-        if (mod.id === moduleId && mod.newMaterialTitle?.trim()) {
-          // You'll need to create the ID server-side normally
-          // This is just a temporary client-side ID for new materials
-          const tempId = Math.floor(Math.random() * -1000) - 1; // Negative ID to indicate temporary
+  const handleDeleteMaterial = async (moduleId: number, index: number) => {
+    const module = modules.find(m => m.id === moduleId);
+    if (!module) return;
 
-          return {
-            ...mod,
-            materials: [...mod.materials, {
-              id: tempId,
-              title: mod.newMaterialTitle
-            }],
-            creatingMaterial: false,
-            newMaterialTitle: "",
-          };
-        }
-        return { ...mod, creatingMaterial: false };
-      })
-    );
-  };
+    const materialToDelete = module.materials[index];
 
-  const handleDeleteMaterial = (moduleId: number, index: number) => {
-    setModules((prev) =>
-      prev.map((mod) =>
+    // If the material being deleted is currently selected, clear the selection
+    if (selectedMaterial === materialToDelete.id.toString()) {
+      setSelectedMaterial(null);
+      setCurrentMaterialMeta(null);
+      setCurrentMaterialContentId(null);
+      setEditorValue(INIT_VALUE);
+    }
+
+    // Update the UI by removing the material
+    setModules(prev =>
+      prev.map(mod =>
         mod.id === moduleId
           ? {
             ...mod,
@@ -195,6 +338,9 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
           : mod
       )
     );
+
+    // TODO: implement delete with api
+    // await deletePracticumMaterial(materialToDelete.id);
   };
 
   if (!isOpen) return null;
@@ -211,7 +357,12 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
             ✕
           </button>
           <p className="font-bold">Pemrograman Mobile</p>
-          <Button onClick={handleSave}>Save</Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !selectedMaterial || !editorInstance}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
         </div>
 
         {/* Content */}
@@ -265,7 +416,8 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
                       <div
                         key={index}
                         onClick={() => handleMaterialClick(material.id.toString())}
-                        className="border rounded-md p-2 flex flex-row items-center gap-1 justify-between hover:cursor-pointer"
+                        className={`border rounded-md p-2 flex flex-row items-center gap-1 justify-between hover:cursor-pointer ${selectedMaterial === material.id.toString() ? 'bg-blue-100' : ''
+                          }`}
                       >
                         <div className="flex flex-row items-center gap-1">
                           <span className="border border-gray-300 rounded-md w-6 h-6 flex items-center justify-center text-sm text-gray-600">
@@ -274,8 +426,11 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
                           <p>{material.title}</p>
                         </div>
                         <span
-                          onClick={() => handleDeleteMaterial(module.id, index)}
-                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMaterial(module.id, index);
+                          }}
+                          className="cursor-pointer hover:text-red-500"
                         >
                           <Trash className="size-4" />
                         </span>
@@ -318,7 +473,7 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
 
           {/* Main Editor */}
           <div className="flex-1 h-full overflow-auto p-6">
-            {selectedMaterial && !loadingEditorContent && editorValue ? (
+            {selectedMaterial && !loadingEditorContent ? (
               <Editor
                 value={editorValue}
                 onInit={(instance) => {
@@ -329,7 +484,7 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
               />
             ) : (
               <div className="text-gray-400 text-sm h-full flex items-center justify-center">
-                {loadingEditorContent ? "Loading content..." : "No material selected."}
+                {loadingEditorContent ? "Loading content..." : "No material selected. Select or create a material to begin editing."}
               </div>
             )}
           </div>

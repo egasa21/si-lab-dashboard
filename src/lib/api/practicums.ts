@@ -130,3 +130,83 @@ export async function getPracticumModuleContent(materialId: string) {
     const result = await response.json();
     return result.data.content;
 }
+
+
+export async function createPracticumModule(data: { title: string; practicum_id: string | number }) {
+    const token = getCookie("access_token");
+    if (!token) throw new Error("Unauthorized");
+
+    const response = await fetch(`${API_BASE_URL}/practicum-modules`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.meta?.message || "Failed to create practicum module");
+    }
+
+    return result.data;
+}
+
+export async function createPracticumModuleContent(data: {
+    id_module: number;
+    title: string;
+    content: Record<string, any>;
+    sequence: number;
+}) {
+    const token = getCookie("access_token");
+    if (!token) throw new Error("Unauthorized");
+
+    const response = await fetch(`${API_BASE_URL}/practicum-module-contents`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.meta?.message || "Failed to create practicum module content");
+    }
+
+    return result.data;
+}
+
+
+export async function updatePracticumModuleContent(id: number, data: {
+    id_module: number;
+    title: string;
+    content: Record<string, any>;
+    sequence: number;
+}) {
+    const token = getCookie("access_token");
+    if (!token) throw new Error("Unauthorized");
+
+    const response = await fetch(`${API_BASE_URL}/practicum-module-contents/${id}`, {
+        method: "PUT",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.meta?.message || "Failed to update practicum module content");
+    }
+
+    return result.data;
+}
+
+

@@ -133,18 +133,20 @@ interface EditorProps {
 export default function Editor({ value, onInit, onChange, isReady = false }: EditorProps) {
     const editor = useMemo(() => createYooptaEditor(), []);
     const selectionRef = useRef(null);
+    const initialFocusRef = useRef(false);
 
     useEffect(() => {
         if (onInit) onInit(editor);
     }, [editor, onInit]);
 
+    // Only focus when editor first becomes ready, not on every value change
     useEffect(() => {
-        if (isReady && editor) {
+        if (isReady && editor && !initialFocusRef.current) {
             try {
-                // Wait a bit before trying to focus
                 const timer = setTimeout(() => {
                     try {
                         editor.focus();
+                        initialFocusRef.current = true;
                     } catch (e) {
                         console.log("Could not focus editor:", e);
                     }
@@ -155,14 +157,14 @@ export default function Editor({ value, onInit, onChange, isReady = false }: Edi
                 console.log("Error in focus effect:", e);
             }
         }
-    }, [isReady, editor, value]);
+    }, [isReady, editor]);
 
+    // Handle changes without losing cursor position
     const handleChange = (newValue: YooptaContentValue, options: YooptaOnChangeOptions) => {
         if (onChange) {
             onChange(newValue, options);
         }
     };
-
 
     return (
         <div className="h-full md:py-[100px] md:pl-[200px] md:pr-[80px] px-[20px] pt-[80px] pb-[40px] flex justify-center" ref={selectionRef}>
