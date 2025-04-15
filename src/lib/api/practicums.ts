@@ -209,4 +209,25 @@ export async function updatePracticumModuleContent(id: number, data: {
     return result.data;
 }
 
+export async function deletePracticumModuleContent(id: number) {
+    const token = getCookie("access_token");
+    if (!token) throw new Error("Unauthorized");
+
+    const response = await fetch(`${API_BASE_URL}/practicum-module-contents/${id}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.meta?.message || "Failed to delete practicum module content");
+    }
+
+    return result.meta;
+}
+
 

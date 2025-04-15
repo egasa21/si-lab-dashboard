@@ -10,6 +10,7 @@ import { createYooptaEditor, YooptaContentValue, YooptaOnChangeOptions } from "@
 import {
   createPracticumModule,
   createPracticumModuleContent,
+  deletePracticumModuleContent,
   getModulesWithMaterials,
   getPracticumModuleContent,
   updatePracticumModuleContent
@@ -339,8 +340,7 @@ export const PracticumModulModal = ({ isOpen, onClose, practicumId }: FullScreen
       )
     );
 
-    // TODO: implement delete with api
-    // await deletePracticumMaterial(materialToDelete.id);
+    await deletePracticumModuleContent(materialToDelete.id);
   };
 
   if (!isOpen) return null;
