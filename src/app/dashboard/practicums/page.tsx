@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircleIcon } from "lucide-react";
 import { PracticumModulModal } from "./components/practicum-module";
 import { getPracticums, deletePracticum } from "@/lib/api/practicums";
+import { PracticumModuleModal } from "./components/practicum-module/index";
 
 type PracticumType = {
     id: string;
@@ -126,7 +127,8 @@ export default function Practicums() {
                 </DialogContent>
             </Dialog>
 
-            <PracticumModulModal isOpen={isPracModulesOpen} onClose={() => setPracModulesOpen(false)} practicumId={selectedPracticumId}/>
+            {/* <PracticumModulModal isOpen={isPracModulesOpen} onClose={() => setPracModulesOpen(false)} practicumId={selectedPracticumId}/> */}
+            <PracticumModuleModal isOpen={isPracModulesOpen} onClose={() => setPracModulesOpen(false)} practicumId={selectedPracticumId}/>
         </div>
     );
 }

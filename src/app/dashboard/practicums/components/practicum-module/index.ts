@@ -1,0 +1,1 @@
+export { PracticumModuleModal } from './PracticumModuleModal';
