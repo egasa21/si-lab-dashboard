@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircleIcon } from "lucide-react";
-import { PracticumModulModal } from "./components/practicum-module";
 import { getPracticums, deletePracticum } from "@/lib/api/practicums";
 import { PracticumModuleModal } from "./components/practicum-module/index";
 
